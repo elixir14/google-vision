@@ -20,11 +20,9 @@ logger = getLogger(__name__)
 def get_ocr_data(images = []):
     vision_api = VisionApi()
     vision_response = vision_api.detect_text(images)
-    print vision_response
     locale = ''
     response_data = {}
     for file_path, value in vision_response.iteritems():
-        file_path = file_path.replace(settings.MEDIA_URL,'')
         if value:
             response_data[file_path] = value[0]['description'].split('\n')
 
@@ -35,22 +33,34 @@ def get_card_ocr_data(scanned_card_master=None):
     if scanned_card_master is None:
         logger.error("scanned_card_master is not initialized")
         raise Exception("Scanned card object is not initialized.")
-    file_list = {}
+    card_files = {}
     if scanned_card_master.card_front.name:
-        file_list[os.path.join(settings.MEDIA_URL, scanned_card_master.card_front.name) =
+        card_files[os.path.join(settings.MEDIA_URL, scanned_card_master.card_front.name)] = CardSide.FRONT
     if scanned_card_master.card_back.name:
-        file_list.append(os.path.join(settings.MEDIA_URL, scanned_card_master.card_back.name))
+        card_files[os.path.join(settings.MEDIA_URL, scanned_card_master.card_back.name)] = CardSide.BACK
 
-    print file_list
 
-    if file_list:
+    if card_files:
         card_ocr_data = []
-        response_data = get_ocr_data(images=file_list)
-        for response_data
+        response_data = get_ocr_data(images=card_files.keys())
+        for file_path, descriptions in response_data.iteritems():
+            if file_path in card_files.keys():
+                card_ocr_data.append({card_files.get(file_path) : descriptions})
+        return card_ocr_data
     else:
         logger.error("file_list is not empty")
         raise Exception("No scanned card found.")
 
+
+def process_scanned_data_item(scanned_card_master, item):
+    scanned_card_detail = ScannedCardDetail()
+    scanned_card_detail.scanned_card = scanned_card_master
+    scanned_card_detail.text = item
+    scanned_card_detail.bounding_cortdinate = ''
+    scanned_card_detail.predicated_caption = 0
+
+    #TODO: Implement Prediction logic.
+    return scanned_card_detail
 
 @api_view(['POST'])
 def scanned_info(request):
@@ -61,27 +71,16 @@ def scanned_info(request):
 
     scanned_card_master = ScannedCardMaster(**scanned_card_master_serializer.validated_data)
     scanned_card_master.save()
-    print scanned_card_master.card_front
-    # print scanned_card_master_serializer.card_front
-    locale, descriptions = get_card_ocr_data(scanned_card_master=scanned_card_master)
-    #
-    # scanned_card_master.locale = locale
-    # scanned_card_master.save()
-    return Response("kkk", status=status.HTTP_400_BAD_REQUEST)
+    ocr_data_list = get_card_ocr_data(scanned_card_master=scanned_card_master)
 
-    scanned_card_detail_list = []
-    for item in descriptions:
-        if not item:
-            continue
-        scanned_card_detail = ScannedCardDetail()
-        scanned_card_detail.scanned_card = scanned_card_master
-        scanned_card_detail.text = item
-        scanned_card_detail.bounding_cortdinate = ''
-        scanned_card_detail.predicated_caption = 0
-        scanned_card_detail.save()
-        scanned_card_detail_list.append(scanned_card_detail)
-
-    print scanned_card_master.id
+    for ocr_data in ocr_data_list:
+        for card_side, descriptions in ocr_data.iteritems():
+            for item in descriptions:
+                if not item:
+                    continue
+                scanned_card_detail = process_scanned_data_item(scanned_card_master, item)
+                scanned_card_detail.card_side = card_side
+                scanned_card_detail.save()
 
     details = ScannedCardDetailSerializer(ScannedCardDetail.objects.filter(
         scanned_card=scanned_card_master), many=True)
