@@ -11,22 +11,11 @@ from .constants import CardSide
 from .cloud_vision import VisionApi
 from .models import ScannedCardMaster, ScannedCardDetail
 from .serializers import ScannedCardMasterSerializer, ScannedCardDetailSerializer
+from utils import get_ocr_data
 
 logger = getLogger(__name__)
 
 # Create your views here.
-
-
-def get_ocr_data(images = []):
-    vision_api = VisionApi()
-    vision_response = vision_api.detect_text(images)
-    locale = ''
-    response_data = {}
-    for file_path, value in vision_response.iteritems():
-        if value:
-            response_data[file_path] = value[0]['description'].split('\n')
-
-    return response_data
 
 
 def get_card_ocr_data(scanned_card_master=None):
@@ -61,6 +50,7 @@ def process_scanned_data_item(scanned_card_master, item):
 
     #TODO: Implement Prediction logic.
     return scanned_card_detail
+
 
 @api_view(['POST'])
 def scanned_info(request):
