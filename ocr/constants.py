@@ -7,6 +7,7 @@ class CardSide:
 
 
 class UserField:
+    UNKNOWN = 999
     FIRSTNAME = 0
     LASTNAME = 1
     TITLE = 2

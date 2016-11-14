@@ -44,9 +44,11 @@ class ScannedCardDetail(models.Model):
     SideChoices = ((CardSide.FRONT, 'Front'), (CardSide.BACK, 'Back'), (CardSide.UNKNOWN, 'Unknown'))
     scanned_card = models.ForeignKey(ScannedCardMaster, db_column='scannedcard_master_id', related_name='scannedcard_master_id')
     text =  models.CharField(max_length=200, db_column='text')
-    predicated_caption = models.IntegerField(choices=FieldChoices, default=0, db_column='predicated_caption')
+    predicated_caption = models.IntegerField(choices=FieldChoices, default=UserField.UNKNOWN,
+                                             db_column='predicated_caption')
     bounding_cortdinate = models.CharField(max_length=200, blank=True, db_column='bounding_cortdinate')
-    accepted_caption = models.IntegerField(choices=FieldChoices, default=0, db_column='accepted_caption')
+    accepted_caption = models.IntegerField(choices=FieldChoices, default=UserField.UNKNOWN,
+                                           db_column='accepted_caption')
     card_side =  models.IntegerField(choices=SideChoices, default=CardSide.UNKNOWN, db_column='card_side')
 
     class Meta:

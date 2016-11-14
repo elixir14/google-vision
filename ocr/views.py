@@ -11,8 +11,8 @@ from .constants import CardSide
 from .cloud_vision import VisionApi
 from .models import ScannedCardMaster, ScannedCardDetail
 from .serializers import ScannedCardMasterSerializer, ScannedCardDetailSerializer
-from utils import get_ocr_data
-
+from .utils import get_ocr_data
+from .predictions import predicate_item
 logger = getLogger(__name__)
 
 # Create your views here.
@@ -44,9 +44,9 @@ def get_card_ocr_data(scanned_card_master=None):
 def process_scanned_data_item(scanned_card_master, item):
     scanned_card_detail = ScannedCardDetail()
     scanned_card_detail.scanned_card = scanned_card_master
-    scanned_card_detail.text = item
-    scanned_card_detail.bounding_cortdinate = ''
-    scanned_card_detail.predicated_caption = 0
+    scanned_card_detail.text = item[0]
+    scanned_card_detail.bounding_cortdinate = str(item[1])
+    scanned_card_detail.predicated_caption = predicate_item(item[0])
 
     #TODO: Implement Prediction logic.
     return scanned_card_detail
@@ -71,7 +71,6 @@ def scanned_info(request):
                 scanned_card_detail = process_scanned_data_item(scanned_card_master, item)
                 scanned_card_detail.card_side = card_side
                 scanned_card_detail.save()
-
     details = ScannedCardDetailSerializer(ScannedCardDetail.objects.filter(
         scanned_card=scanned_card_master), many=True)
 

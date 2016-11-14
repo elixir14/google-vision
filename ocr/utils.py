@@ -12,6 +12,18 @@ from constants import UserField
 
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 RESULT_DIR_NAME = 'card_result'
+
+
+def parse_ocr_data(vision_data = {}):
+    parsed_data_list = []
+    for data in vision_data[1:]:
+        try:
+            parsed_data_list.append([data['description'], data['boundingPoly']['vertices']])
+        except KeyError, ex:
+            logger.error(ex)
+
+    return parsed_data_list
+
 def get_ocr_data(images = []):
     vision_api = VisionApi()
     vision_response = vision_api.detect_text(images)
@@ -20,7 +32,9 @@ def get_ocr_data(images = []):
     for file_path, value in vision_response.iteritems():
         if value:
             #data = value[0]['description'].replace('\n', ' ')
-            response_data[file_path] =  value[0]['description'].split('\n')
+            parsed_data_list = parse_ocr_data(vision_data=value)
+            #response_data[file_path] =  value[0]['description'].split('\n')
+            response_data[file_path] =  parsed_data_list
 
     return response_data
 

@@ -21,4 +21,5 @@ class ScannedCardDetailSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ScannedCardDetail
-        fields = ('id', 'scanned_card', 'text', 'predicated_caption', 'accepted_caption','card_side')
+        fields = ('id', 'scanned_card', 'text', 'predicated_caption',
+                  'accepted_caption','card_side', 'bounding_cortdinate')

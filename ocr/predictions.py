@@ -1,6 +1,10 @@
-import re, os
-
+import re
 from logging import getLogger
+
+from django.db.models import Count
+
+from .models import ScannedCardDetail
+from constants import UserField
 logger = getLogger(__name__)
 
 
@@ -28,6 +32,33 @@ def make_predictions(input_list):
 
     logger.debug("make_predictions returns %s" % str(prediction_map))
     return prediction_map
+
+
+def predicate_item(input_text):
+    if check_email_address(input_text):
+        return UserField.EMAIL_1
+    if check_website(input_text):
+        return UserField.WEBSITE_1
+    if check_phone_number(input_text):
+        return UserField.PHONE_1
+
+    return predict_from_existing_records(input_text=input_text)
+
+
+def predict_from_existing_records(input_text):
+    predicated_caption_summary = ScannedCardDetail.objects.values('accepted_caption').annotate(
+        num_instances=Count('accepted_caption')).filter(text=input_text)
+    print input_text
+    print predicated_caption_summary.query
+    predicated_caption = UserField.UNKNOWN
+    num_instances = 0
+    for item in predicated_caption_summary:
+        if item['accepted_caption'] != UserField.UNKNOWN:
+            if int(item['num_instances']) > num_instances:
+                num_instances = int(item['num_instances'])
+                predicated_caption = int(item['accepted_caption'])
+
+    return predicated_caption
 
 
 def check_email_address(input_text):
